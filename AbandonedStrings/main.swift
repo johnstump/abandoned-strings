@@ -27,6 +27,7 @@ func findFilesIn(_ directories: [String], withExtensions extensions: [String]) -
             return []
         }
         while let path = enumerator.nextObject() as? String {
+            if path.contains("/Pods/") { continue }
             let fileExtension = (path as NSString).pathExtension.lowercased()
             if extensions.contains(fileExtension) {
                 let fullPath = (directory as NSString).appendingPathComponent(path)
@@ -37,13 +38,13 @@ func findFilesIn(_ directories: [String], withExtensions extensions: [String]) -
     return files
 }
 
-func contentsOfFile(_ filePath: String) -> String {
+func contentsOfFile(_ filePath: String) -> String? {
     do {
         return try String(contentsOfFile: filePath)
     }
     catch { 
-        print("cannot read file!!!")
-        exit(1)
+        print("cannot read file \(filePath)")
+        return nil
     }
 }
 
@@ -54,7 +55,11 @@ func concatenateAllSourceCodeIn(_ directories: [String], withStoryboard: Bool) -
     }
     let sourceFiles = findFilesIn(directories, withExtensions: extensions)
     return sourceFiles.reduce("") { (accumulator, sourceFile) -> String in
-        return accumulator + contentsOfFile(sourceFile)
+        if let contents = contentsOfFile(sourceFile) {
+            return accumulator + contents
+        } else {
+            return accumulator
+        }
     }
 }
 
@@ -63,7 +68,8 @@ func concatenateAllSourceCodeIn(_ directories: [String], withStoryboard: Bool) -
 let doubleQuote = "\""
 
 func extractStringIdentifiersFrom(_ stringsFile: String) -> [String] {
-    return contentsOfFile(stringsFile)
+    guard let contents = contentsOfFile(stringsFile) else { return [] }
+    return contents
         .components(separatedBy: "\n")
         .map    { $0.trimmingCharacters(in: CharacterSet.whitespaces) }
         .filter { $0.hasPrefix(doubleQuote) }
@@ -92,7 +98,9 @@ func findStringIdentifiersIn(_ stringsFile: String, abandonedBySourceCode source
 }
 
 func stringsFile(_ stringsFile: String, without identifiers: [String]) -> String {
-    return contentsOfFile(stringsFile)
+    guard let contents = contentsOfFile(stringsFile) else { return "" }
+
+    return contents
         .components(separatedBy: "\n")
         .filter({ (line) in
             guard line.hasPrefix(doubleQuote) else { return true } // leave non-strings lines like comments in
