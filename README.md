@@ -1,3 +1,7 @@
+# Updates made in this fork
+- No longer aborts the app if a file can't be opened; just output an error and skip it
+- No longer wandering into Pods directory, which can easily overload this app
+
 # Abandoned Resource String Detection
 This command line program detects unused resource strings in an iOS or OS X application.
 
